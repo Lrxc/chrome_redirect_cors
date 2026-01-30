@@ -51,7 +51,7 @@
     
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
     .modal-overlay.show { display: flex; }
-    .modal { background: white; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: modalIn 0.2s ease-out; }
+    .modal { background: white; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: modalIn 0.2s ease-out; position: relative; z-index: 1001; }
     @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e0e0e0; }
     .modal-header h3 { font-size: 18px; }
@@ -60,9 +60,22 @@
     .modal-body { padding: 24px; }
     .modal-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
     .modal-label { font-size: 14px; color: #333; font-weight: 500; width: 70px; }
-    .modal-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; color: #333; }
+    .modal-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: white !important;
+      color: #333 !important;
+      -webkit-text-fill-color: #333 !important;
+      opacity: 1 !important;
+      -webkit-user-select: text;
+      user-select: text;
+    }
     .modal-input:focus { outline: none; border-color: #667eea; }
-    .modal-input::placeholder { color: #999; }
+    .modal-input::placeholder { color: #999; -webkit-text-fill-color: #999; }
+    .modal-input:-webkit-autofill { -webkit-text-fill-color: #333 !important; -webkit-box-shadow: 0 0 0 1000px white inset !important; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #e0e0e0; background: #fafafa; border-radius: 0 0 12px 12px; }
     
     .switch-group { display: flex; align-items: center; gap: 10px; }
@@ -118,15 +131,15 @@
         </div>
         <div class="modal-row">
           <label class="modal-label">名称:</label>
-          <input type="text" id="ruleName" class="modal-input" placeholder="如: 本地开发">
+          <input type="text" id="ruleName" class="modal-input" placeholder="如: 本地开发" autocomplete="off">
         </div>
         <div class="modal-row">
           <label class="modal-label">源地址:</label>
-          <input type="text" id="fromUrl" class="modal-input" placeholder="如: https://api.example.com">
+          <input type="text" id="fromUrl" class="modal-input" placeholder="如: https://api.example.com" autocomplete="off">
         </div>
         <div class="modal-row">
           <label class="modal-label">目标地址:</label>
-          <input type="text" id="toUrl" class="modal-input" placeholder="如: http://localhost:8080">
+          <input type="text" id="toUrl" class="modal-input" placeholder="如: http://localhost:8080" autocomplete="off">
         </div>
       </div>
       <div class="modal-footer">

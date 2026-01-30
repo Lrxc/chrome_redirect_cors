@@ -14,8 +14,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('closeModal').onclick = $('cancelAdd').onclick = closeModal;
   $('addBtn').onclick = save;
   form.type.onchange = updateHint;
-  form.to.onkeypress = e => e.key === 'Enter' && save();
-  document.onkeydown = e => e.key === 'Escape' && modal.classList.contains('show') && closeModal();
+  form.to.addEventListener('keypress', e => { if (e.key === 'Enter') save(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+  });
   
   // 规则列表点击委托
   $('rulesList').onclick = async e => {
