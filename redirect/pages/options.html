@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirect - 规则配置</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 40px 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; }
+    .header h1 { font-size: 24px; margin-bottom: 8px; }
+    .header p { opacity: 0.9; font-size: 14px; }
+    .content { background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .section-header h3 { font-size: 16px; color: #333; }
+    
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .btn-secondary { background: #e0e0e0; color: #333; }
+    
+    .btn-icon { width: 32px; height: 32px; padding: 0; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-icon:hover { transform: scale(1.1); }
+    .btn-icon.btn-secondary { background: #f5f5f5; color: #666; }
+    .btn-icon.btn-danger { background: #ffebee; color: #e53935; }
+    .btn-icon.btn-warning { background: #fff3e0; color: #e65100; }
+    .btn-icon.btn-success { background: #e8f5e9; color: #4CAF50; }
+    
+    .rules-list { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .rule-item { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid #e0e0e0; background: #fafafa; gap: 12px; }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-item:nth-child(odd) { background: white; }
+    .rule-item.disabled .rule-info { opacity: 0.45; }
+    .rule-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+    .rule-type { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+    .rule-type.prefix { background: #e3f2fd; color: #1976D2; }
+    .rule-type.regex { background: #fce4ec; color: #c2185b; }
+    .rule-name { font-size: 15px; font-weight: 600; color: #333; background: #fff3e0; padding: 4px 12px; border-radius: 6px; }
+    .rule-from, .rule-to { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+    .rule-from { color: #e91e63; }
+    .rule-to { color: #4CAF50; }
+    .rule-arrow { color: #999; font-size: 14px; }
+    .rule-actions { display: flex; gap: 8px; }
+    .empty-state { text-align: center; padding: 40px; color: #999; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    
+    .tip-box { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 16px; border-radius: 0 8px 8px 0; margin-top: 20px; }
+    .tip-box h4 { color: #1976D2; margin-bottom: 8px; font-size: 14px; }
+    .tip-box p { color: #666; font-size: 13px; line-height: 1.6; }
+    .tip-box code { background: #fff; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: white; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: modalIn 0.2s ease-out; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e0e0e0; }
+    .modal-header h3 { font-size: 18px; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; padding: 4px 8px; border-radius: 4px; }
+    .modal-close:hover { background: #f5f5f5; color: #333; }
+    .modal-body { padding: 24px; }
+    .modal-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
+    .modal-label { font-size: 14px; color: #333; font-weight: 500; width: 70px; }
+    .modal-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; color: #333; }
+    .modal-input:focus { outline: none; border-color: #667eea; }
+    .modal-input::placeholder { color: #999; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #e0e0e0; background: #fafafa; border-radius: 0 0 12px 12px; }
+    
+    .switch-group { display: flex; align-items: center; gap: 10px; }
+    .switch-label { font-size: 14px; color: #666; }
+    .switch { position: relative; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #e0e0e0; border-radius: 24px; transition: 0.3s; }
+    .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+    .switch input:checked + .slider { background: #667eea; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔀 URL 重定向规则配置</h1>
+      <p>将指定的 URL 前缀重定向到另一个地址</p>
+    </div>
+    <div class="content">
+      <div class="section-header">
+        <h3>📋 规则 (<span id="ruleCount">0</span>)</h3>
+        <button class="btn btn-primary" id="openAddModal">+ 新建</button>
+      </div>
+      <div class="rules-list" id="rulesList">
+        <div class="empty-state"><div class="icon">📭</div><p>暂无重定向规则</p></div>
+      </div>
+      <div class="tip-box">
+        <h4>💡 使用说明</h4>
+        <p>
+          <strong>前缀匹配：</strong><br>
+          源: <code>https://api.example.com</code> → 目标: <code>http://localhost:8080</code><br><br>
+          <strong>正则匹配：</strong><br>
+          源: <code>https://(.+)\.example\.com/api</code> → 目标: <code>http://localhost:8080/$1</code>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">➕ 添加新规则</h3>
+        <button class="modal-close" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <label class="modal-label">模式:</label>
+          <div class="switch-group">
+            <span class="switch-label">前缀</span>
+            <label class="switch"><input type="checkbox" id="matchType"><span class="slider"></span></label>
+            <span class="switch-label">正则</span>
+          </div>
+        </div>
+        <div class="modal-row">
+          <label class="modal-label">名称:</label>
+          <input type="text" id="ruleName" class="modal-input" placeholder="如: 本地开发">
+        </div>
+        <div class="modal-row">
+          <label class="modal-label">源地址:</label>
+          <input type="text" id="fromUrl" class="modal-input" placeholder="如: https://api.example.com">
+        </div>
+        <div class="modal-row">
+          <label class="modal-label">目标地址:</label>
+          <input type="text" id="toUrl" class="modal-input" placeholder="如: http://localhost:8080">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelAdd">取消</button>
+        <button class="btn btn-primary" id="addBtn">添加</button>
+      </div>
+    </div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>
