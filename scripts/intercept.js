@@ -58,7 +58,9 @@ window.addEventListener('message', e => {
 // ============================== fetch ==============================
 const _fetch = window.fetch;
 window.fetch = async function (input, init = {}) {
-    const url = input instanceof Request ? input.url : String(input);
+    const rawUrl = input instanceof Request ? input.url : String(input);
+    // 确保 URL 是绝对路径（相对路径转为绝对）
+    const url = new URL(rawUrl, location.href).href;
     const hit = match(url);
     if (!hit) return _fetch.call(this, input, init);
 
@@ -99,7 +101,8 @@ const _send = XMLHttpRequest.prototype.send;
 const _setHeader = XMLHttpRequest.prototype.setRequestHeader;
 
 XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-    const hit = match(String(url));
+    const absUrl = new URL(String(url), location.href).href;
+    const hit = match(absUrl);
     if (hit) {
         this.__redir = { url: hit.url, cors: hit.cors, method: method.toUpperCase(), headers: {} };
         if (!hit.cors) {

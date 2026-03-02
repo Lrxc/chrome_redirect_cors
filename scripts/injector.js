@@ -8,8 +8,18 @@
     const rules = (cfg.rules || []).filter(r => r.enabled !== false);
     if (!rules.length) return;
 
-    window.dispatchEvent(new CustomEvent('__redirect_init__', { detail: JSON.stringify(rules) }));
+    // 传递规则给 MAIN world
+    // 使用轮询确保 intercept.js 已注册监听器
+    const detail = JSON.stringify(rules);
+    const dispatch = () => window.dispatchEvent(new CustomEvent('__redirect_init__', { detail }));
 
+    // 立即尝试 + 延迟重试，确保 MAIN world 能接收到
+    dispatch();
+    setTimeout(dispatch, 0);
+    setTimeout(dispatch, 50);
+    setTimeout(dispatch, 200);
+
+    // 监听代理请求
     window.addEventListener('message', async e => {
         if (e.data?.type !== '__redir_req__') return;
         const { id, url, method, headers, body } = e.data;
