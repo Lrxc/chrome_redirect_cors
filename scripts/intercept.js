@@ -1,12 +1,17 @@
 // intercept.js — MAIN world
-// 拦截 fetch/XHR → 通过 background service worker 代理 → 绕过 CORS/PNA
+// 拦截 fetch/XHR，根据规则的 cors 设置决定：
+//   cors=true  → 通过 background service worker 代理（绕过 CORS/PNA）
+//   cors=false → 直接修改请求 URL（不代理）
 
 let matchers = [];
 let nextId = 0;
 const pending = new Map();
 
+// 匹配规则，返回 { url, cors } 或 null
 function match(url) {
-    for (const m of matchers) if (m.test(url)) return m.rewrite(url);
+    for (const m of matchers) {
+        if (m.test(url)) return { url: m.rewrite(url), cors: m.cors };
+    }
     return null;
 }
 
@@ -54,11 +59,20 @@ window.addEventListener('message', e => {
 const _fetch = window.fetch;
 window.fetch = async function (input, init = {}) {
     const url = input instanceof Request ? input.url : String(input);
-    const to = match(url);
-    if (!to) return _fetch.call(this, input, init);
+    const hit = match(url);
+    if (!hit) return _fetch.call(this, input, init);
 
-    const id = ++nextId;
+    const { url: to, cors } = hit;
     const method = (init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+
+    // 不走代理：直接改 URL
+    if (!cors) {
+        console.log(`[Redirect] ${method} ${url} → ${to}`);
+        return _fetch.call(this, input instanceof Request ? new Request(to, input) : to, init);
+    }
+
+    // 走代理
+    const id = ++nextId;
     const headers = toPlainHeaders(init.headers || (input instanceof Request ? input.headers : null));
     let rawBody = init.body ?? null;
     if (!rawBody && input instanceof Request && !['GET', 'HEAD'].includes(method)) {
@@ -85,19 +99,35 @@ const _send = XMLHttpRequest.prototype.send;
 const _setHeader = XMLHttpRequest.prototype.setRequestHeader;
 
 XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-    const to = match(String(url));
-    this.__redir = to ? { url: to, method: method.toUpperCase(), headers: {} } : null;
-    if (!to) _open.call(this, method, url, async, user, pass);
+    const hit = match(String(url));
+    if (hit) {
+        this.__redir = { url: hit.url, cors: hit.cors, method: method.toUpperCase(), headers: {} };
+        if (!hit.cors) {
+            // 不走代理：直接用新 URL 调用原始 open
+            _open.call(this, method, hit.url, async, user, pass);
+        }
+    } else {
+        this.__redir = null;
+        _open.call(this, method, url, async, user, pass);
+    }
 };
 
 XMLHttpRequest.prototype.setRequestHeader = function (k, v) {
-    this.__redir ? (this.__redir.headers[k] = v) : _setHeader.call(this, k, v);
+    (this.__redir?.cors) ? (this.__redir.headers[k] = v) : _setHeader.call(this, k, v);
 };
 
 XMLHttpRequest.prototype.send = function (body) {
     if (!this.__redir) return _send.call(this, body);
 
-    const { url, method, headers } = this.__redir;
+    const { url, cors, method, headers } = this.__redir;
+
+    // 不走代理：直接发送（URL 已在 open 中修改）
+    if (!cors) {
+        console.log(`[Redirect] XHR ${method} → ${url}`);
+        return _send.call(this, body);
+    }
+
+    // 走代理
     const id = ++nextId;
     const xhr = this;
     const rtype = xhr.responseType || 'text';
@@ -111,7 +141,6 @@ XMLHttpRequest.prototype.send = function (body) {
         const ok = !resp.error;
         logResp('XHR ', method, url, resp, ms);
 
-        // 根据 responseType 处理 response
         let parsed = ok ? (resp.body ?? '') : '';
         if (ok && rtype === 'json') { try { parsed = JSON.parse(resp.body); } catch { parsed = null; } }
 
@@ -136,9 +165,11 @@ window.addEventListener('__redirect_init__', e => {
     matchers = JSON.parse(e.detail).map(r => {
         const re = r.isRegex ? new RegExp(r.from) : null;
         return {
+            cors: r.cors !== false,
             test: url => re ? re.test(url) : url.startsWith(r.from),
             rewrite: url => re ? url.replace(re, r.to) : r.to + url.slice(r.from.length)
         };
     });
-    console.log(`[Redirect] 已加载 ${matchers.length} 条规则`);
+    const corsCount = matchers.filter(m => m.cors).length;
+    console.log(`[Redirect] 已加载 ${matchers.length} 条规则（${corsCount} 条启用 CORS 代理）`);
 }, { once: true });
