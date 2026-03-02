@@ -1,75 +1,79 @@
-# Chrome Dev Tools - Chrome 扩展工具集
+# Redirect - Chrome 扩展
 
-面向 Web 开发者的 Chrome 浏览器扩展工具集，基于 Manifest V3，解决开发中常见的 URL 重定向和 CORS 跨域问题。
+URL 重定向的 Chrome 浏览器扩展，基于 Manifest V3。
 
-## 包含扩展
+## 功能特点
 
-### 1. Redirect (`redirect/`)
-
-URL 重定向扩展，使用 Chrome declarativeNetRequest API 实现请求拦截与重定向。
-
-- 支持**前缀匹配**和**正则表达式**两种模式
-- 可视化规则管理界面，支持增删改查
-- 动态图标状态显示（绿色启用 / 灰色禁用）
-- 配置持久化存储
-
-### 2. CORS Proxy (`cors/`)
-
-CORS 跨域代理扩展，通过多层代理机制绕过浏览器跨域限制。
-
-- 基于 fetch/XHR 代理实现 CORS 绕过
-- 每条规则可独立控制 CORS 开关
-- 代理流程：`页面请求 → proxy.js 拦截 → inject.js 转发 → background.js 代理 → 目标服务器`
-- 动态图标状态显示
+- 🔀 **URL 重定向** - 支持前缀匹配和正则表达式
+- 🌐 **自动 CORS 处理** - 自动为重定向目标注入 CORS 响应头，解决跨域问题
+- 📋 **规则管理** - 可视化配置界面，支持增删改查
+- 🎨 **动态图标** - 绿色启用/灰色禁用，显示规则数量
+- 💾 **自动保存** - 配置持久化存储
 
 ## 安装方法
 
 1. 打开 Chrome，访问 `chrome://extensions/`
 2. 开启右上角「开发者模式」
 3. 点击「加载已解压的扩展程序」
-4. 选择对应的扩展文件夹（`redirect/` 或 `cors/`）
+4. 选择本项目文件夹
 
-## 项目结构
+## 使用方法
+
+### 基本操作
+
+1. 点击工具栏扩展图标打开弹窗
+2. 使用总开关控制所有功能的启用/禁用
+3. 点击「编辑」按钮打开规则配置页面
+
+### 配置规则
+
+1. 点击「+ 新建」添加规则
+2. 选择匹配模式：**前缀** 或 **正则**
+3. 填写规则名称、源地址、目标地址
+4. 点击「添加」保存
+
+### 示例
+
+**前缀匹配：**
+- 源：`https://api.example.com`
+- 目标：`http://localhost:8080`
+- 效果：`https://api.example.com/v1/users` → `http://localhost:8080/v1/users`
+
+**正则匹配：**
+- 源：`^https://(.+)\.example\.com/api`
+- 目标：`http://localhost:8080/$1`
+- 效果：`https://test.example.com/api` → `http://localhost:8080/test`
+
+## 工作原理
+
+使用 Chrome 的 declarativeNetRequest API 实现 URL 重定向。
+
+## 文件结构
 
 ```
-chrome_dev/
-├── redirect/                # URL 重定向扩展
-│   ├── manifest.json
-│   ├── README.md
-│   ├── icons/               # 图标文件
-│   ├── pages/
-│   │   ├── popup.html/js    # 弹窗界面
-│   │   └── options.html/js  # 规则配置页面
-│   └── scripts/
-│       └── background.js    # Service Worker
-│
-├── cors/                    # CORS 跨域代理扩展
-│   ├── manifest.json
-│   ├── README.md
-│   ├── icons/               # 图标文件
-│   ├── pages/
-│   │   ├── popup.html/js    # 弹窗界面
-│   └── scripts/
-│       ├── background.js    # Service Worker
-│       ├── inject.js        # Content Script
-│       └── proxy.js         # 页面代理脚本
-│
-└── docs/                    # 文档与密钥
+redirect/
+├── manifest.json        # 扩展配置
+├── README.md
+├── icons/               # 图标文件
+├── pages/               # 页面文件
+│   ├── popup.html/js    # 弹窗界面
+│   └── options.html/js  # 规则配置页面
+└── scripts/             # 脚本文件
+    └── background.js    # Service Worker
 ```
+
+## 注意事项
+
+⚠️ **安全提示**
+
+- 仅用于**开发调试**目的
+- 使用完毕后请关闭总开关
 
 ## 技术栈
 
 - Chrome Extension Manifest V3
 - declarativeNetRequest API
-- Content Script + Page Script
 - Chrome Storage API
-
-## 注意事项
-
-- 仅用于**开发调试**目的
-- 使用完毕后请关闭总开关
-- 避免在敏感网站（网银、支付）启用
-- 生产环境跨域问题应通过服务端配置解决
 
 ## License
 
